@@ -14,5 +14,5 @@ Una vista previa al proyecto:
 
 
 > [!IMPORTANT]
-> Todo el código fue hecho con CURSOR AI 🚀👨🏻‍🚀
+> El 95% del código fue hecho con CURSOR AI 🚀👨🏻‍🚀
 
