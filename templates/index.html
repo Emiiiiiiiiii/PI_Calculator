@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculadora de Esfuerzos 👽😎</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</head>
+<body>
+    <h1>Calculadora de Esfuerzos 👽</h1>
+    <form id="calculadora">
+        <div class="input-container">
+            <div>
+                <label for="ancho">Ancho (cm):</label>
+                <input type="number" id="ancho" name="ancho" step="0.01">
+            </div>
+            <img src="{{ url_for('static', filename='Ancho.svg') }}" alt="Ancho" class="input-vector">
+        </div>
+        
+        <div class="input-container">
+            <div>
+                <label for="alto">Alto (cm):</label>
+                <input type="number" id="alto" name="alto" step="0.01">
+            </div>
+            <img src="{{ url_for('static', filename='Alto.svg') }}" alt="Alto" class="input-vector">
+        </div>
+        
+        <div class="input-container">
+            <div>
+                <label for="diametro">Diámetro (cm):</label>
+                <input type="number" id="diametro" name="diametro" step="0.01">
+            </div>
+            <span class="input-symbol" id="diametro-symbol">⌀</span>
+        </div>
+        
+        <div class="input-container">
+            <div>
+                <label for="fuerza">Fuerza aplicada (kg):</label>
+                <input type="number" id="fuerza" name="fuerza" step="0.01">
+            </div>
+            <span class="input-symbol">↓</span>
+        </div>
+        
+        <div class="input-container" id="forma_container" style="display:none;">
+            <div>
+                <label for="forma">Forma de la sección:</label>
+                <select id="forma" name="forma">
+                    <option value="circular">Circular</option>
+                    <option value="anular">Anular</option>
+                    <option value="rectangular">Rectangular</option>
+                </select>
+            </div>
+        </div>
+        
+        <div class="input-container" id="momento_container" style="display:none;">
+            <div>
+                <label for="momento">Momento aplicado (kg·cm):</label>
+                <input type="number" id="momento" name="momento" step="0.01">
+                <span class="input-symbol">↻</span>
+            </div>
+        </div>
+        
+        <div class="input-container">
+            <div>
+                <label for="tipo_calculo">Tipo de cálculo:</label>
+                <select id="tipo_calculo" name="tipo_calculo" class="tipo-calculo">
+                    <option value="traccion_compresion">Tracción/Compresión</option>
+                    <option value="corte">Corte</option>
+                    <option value="flexion">Flexión</option>
+                    <option value="torsion">Torsión</option>
+                </select>
+            </div>
+        </div>
+        
+        <div class="input-container" id="subtipo_container" style="display:none;">
+            <div>
+                <label for="subtipo_calculo">Subtipo de cálculo:</label>
+                <select id="subtipo_calculo" name="subtipo_calculo">
+                    <option value="tension">Calcular Tensión</option>
+                    <option value="area">Calcular Área</option>
+                    <option value="fuerza">Calcular Fuerza</option>
+                    <option value="largo">Calcular Lado</option> <!-- Nueva opción -->
+                    <option value="diametro">Calcular Diámetro</option> <!-- Nueva opción -->
+                </select>
+            </div>
+        </div>
+        
+        <div class="input-container" id="subtipo_corte_container" style="display:none;">
+            <div>
+                <label for="subtipo_corte">Subtipo de cálculo para Corte:</label>
+                <select id="subtipo_corte" name="subtipo_corte">
+                    <option value="area">Calcular Área</option>
+                    <option value="fuerza">Calcular Fuerza</option>
+                    <option value="base">Calcular Base</option>
+                    <option value="altura">Calcular Altura</option>
+                </select>
+            </div>
+        </div>
+        
+        <button type="submit">Calcular</button>
+    </form>
+
+    <div id="resultado"></div>
+
+    <script>
+        $(document).ready(function() {
+            $('#tipo_calculo').change(function() {
+                // Ocultar todos los campos inicialmente
+                $('#subtipo_container').hide();
+                $('#forma_container').hide(); // Ocultar el contenedor de forma
+                $('#momento_container').hide(); // Ocultar el contenedor de momento
+                $('#subtipo_corte_container').hide(); // Ocultar el contenedor de subtipo de corte
+
+                if ($(this).val() === 'traccion_compresion') {
+                    $('#subtipo_container').show();
+                } else if ($(this).val() === 'corte') {
+                    $('#forma_container').show(); // Mostrar el contenedor de forma
+                    $('#subtipo_corte_container').show(); // Mostrar el contenedor de subtipo de corte
+                } else if ($(this).val() === 'flexion') {
+                    $('#momento_container').show(); // Mostrar el contenedor de momento
+                }
+            });
+
+            // Simular el cambio al cargar la página
+            $('#tipo_calculo').trigger('change');
+
+            $('#calculadora').submit(function(e) {
+                e.preventDefault();
+                var formData = $(this).serialize();
+                console.log("Datos enviados:", formData);
+                
+                $.ajax({
+                    url: '/calcular',
+                    type: 'post',
+                    data: formData,
+                    dataType: 'json',
+                    success: function(response) {
+                        console.log("Respuesta recibida:", response);
+                        if (response.resultado) {
+                            if (response.resultado.startsWith("Error:")) {
+                                $('#resultado').html('<span style="color: red;">' + response.resultado + '</span>');
+                            } else {
+                                $('#resultado').html(response.resultado);
+                            }
+                        } else {
+                            $('#resultado').html('<span style="color: red;">Error desconocido en el cálculo.</span>');
+                        }   
+                        $('#resultado').show();
+                    },
+                    error: function(jqXHR, textStatus, errorThrown) {
+                        console.error("Error en la solicitud AJAX:", textStatus, errorThrown);
+                        $('#resultado').html('<span style="color: red;">' + jqXHR.responseJSON.resultado + '</span>');
+                        $('#resultado').show();
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>
